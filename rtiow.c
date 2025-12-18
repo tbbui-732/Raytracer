@@ -11,6 +11,8 @@
 typedef struct {
     double x, y, z;
 } vec3;
+typedef vec3 point;
+typedef vec3 color;
 
 void print(const vec3* Vector) {
     fprintf(stdout, "%f %f %f\n", Vector->x, Vector->y, Vector->z);
@@ -86,8 +88,6 @@ vec3 unit(const vec3* Vector) {
 /****************************/
 /* START OF COLOR UTILITIES */
 /****************************/
-typedef vec3 color;
-
 void write_color(const color* pixel_color) {
     double r = pixel_color->x;
     double g = pixel_color->y;
@@ -100,9 +100,21 @@ void write_color(const color* pixel_color) {
 
     fprintf(stdout, "%d %d %d\n", rbyte, gbyte, bbyte);
 }
-
 /* END OF COLOR UTILITIES */
 
+/*********************/
+/* START OF RAY/RAYS */
+/*********************/
+typedef struct {
+    point origin;
+    vec3 direction;
+} ray;
+
+point at(const ray* r, const double t) {
+    return r->origin + (r->direction * t);
+}
+
+/* END OF RAY/RAYS */
 
 int main(void) {
     const int width = 256;
