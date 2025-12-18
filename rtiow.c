@@ -5,6 +5,8 @@
 #define PROJECT_NAME "RTIOW"
 #define EPSILON 1e-9
 
+// FIXME(bao): image.ppm is resulting in a white image
+
 /*****************/
 /* START OF VEC3 */
 /*****************/
@@ -109,12 +111,25 @@ typedef struct {
 } ray;
 
 vec3 at(const ray* r, const double t) {
-    return add(r->origin, multiply(&(r->direction), t));
+    /*
+        P(t) = A + t*b;
+        s.t. `A` is the origin, `b` is the direction, and `t` is real-value
+    */
+    vec3 t_times_b = multiply(&r->direction, t);
+    return add(&r->origin, &t_times_b);
 }
 
 vec3 ray_color(const ray* r) {
-    vec3 new = {0, 0, 0};
-    return new;
+    vec3 unit_direction = unit(&r->direction);
+    double a = 0.5 * (unit_direction.y + 1.0);
+
+    vec3 color1 = {1.0, 1.0, 1.0};
+    vec3 color2 = {0.5, 0.7, 1.0};
+
+    vec3 op1 = multiply(&color1, (1.0-a));
+    vec3 op2 = multiply(&color2, a);
+    vec3 result = add(&op1, &op2);
+    return result;
 }
 /* END OF RAY/RAYS */
 
@@ -140,16 +155,20 @@ int main(void) {
     vec3 viewport_v = {0, -viewport_height, 0};
 
     // horizontal and vertical delta vectors from pixel to pixel
-    vec3 pixel_delta_u = divide(viewport_u, width);
+    vec3 pixel_delta_u = divide(&viewport_u, (double)image_width);
+    vec3 pixel_delta_v = divide(&viewport_v, (double)image_height);
 
     // Calculate the location of the upper left pixel
-    vec3 viewport_upper_left = camera_center -
-                                (vec3){0, 0, focal_length} -
-                                divide(viewport_u, 2) -
-                                divide(viewport_u, 2);
+    vec3 viewport_u_half = divide(&viewport_u, 2);
+    vec3 viewport_v_half = divide(&viewport_v, 2);
+    vec3 viewport_dif = sub(&viewport_u_half, &viewport_v_half);
 
-    vec3 pixel00_location = viewport_upper_left + 0.5 *
-                             add(pixel_delta_u, pixel_delta_v);
+    vec3 viewport_upper_left = sub(&camera_center, &(vec3){0, 0, focal_length});
+    viewport_upper_left = sub(&viewport_upper_left, &viewport_dif);
+
+    vec3 pixel00_location = add(&pixel_delta_u, &pixel_delta_v);
+    pixel00_location = multiply(&pixel00_location, 0.5);
+    pixel00_location = add(&viewport_upper_left, &pixel00_location);
 
     FILE* file = fopen("image.ppm", "w");
 
@@ -158,12 +177,15 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
-    fprintf(stdout, "P3\n%d %d\n255\n", width, height);
-    for (int j = 0; j < height; j++) {
-        for (int i = 0; i < width; i++) {
-            vec3 pixel_center = pixel00_location +
-                                 (i * pixel_delta_u) + (j * pixel_delta_v);
-            vec3 ray_direction = pixel_center - camera_center;
+    fprintf(stdout, "P3\n%d %d\n255\n", image_width, image_height);
+    for (int j = 0; j < image_height; j++) {
+        for (int i = 0; i < image_width; i++) {
+            vec3 iu = multiply(&pixel_delta_u, i);
+            vec3 jv = multiply(&pixel_delta_v, j);
+            vec3 pixel_center = add(&iu, &jv);
+            pixel_center = add(&pixel_center, &pixel00_location);
+
+            vec3 ray_direction = sub(&pixel_center, &camera_center);
             ray r = {camera_center, ray_direction};
             vec3 pixel_color = ray_color(&r);
             write_color(&pixel_color);
