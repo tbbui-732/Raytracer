@@ -1,6 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
 
 #define PROJECT_NAME "RTIOW"
 #define EPSILON 1e-9
@@ -10,9 +9,43 @@
 /*****************/
 /* START OF VEC3 */
 /*****************/
-typedef struct {
+struct vec3 {
     double x, y, z;
-} vec3;
+    
+    // ctor
+    vec3() { x = 0; y = 0; z = 0; }
+    vec3(double _x, double _y, double _z) : x(_y), y(_y), z(_z) {}
+
+    // additional accessors for colors
+    double r() { return x; }
+    double g() { return y; }
+    double b() { return z; }
+
+    void print() { fprintf(stdout, "%f %f %f\n", x, y, z); }
+    
+    // arithmetics
+    vec3 operator+(const vec3* other) {
+        x += other->x;
+        y += other->y;
+        z += other->z;
+    }
+
+    vec3 operator-(const vec3* other) {
+        x -= other->x;
+        y -= other->y;
+        z -= other->z;
+    }
+
+    vec3 operator*(const double scalar) {
+        x *= scalar;
+        y *= scalar;
+        z *= scalar;
+    }
+
+    // TODO(bao): continue writing arithmetic operator overloads
+    vec3 operator/(const double scalar) {
+    }
+};
 
 void print(const vec3* Vector) {
     fprintf(stdout, "%f %f %f\n", Vector->x, Vector->y, Vector->z);
@@ -105,10 +138,10 @@ void write_color(const vec3* pixel_color) {
 /*********************/
 /* START OF RAY/RAYS */
 /*********************/
-typedef struct {
+struct ray {
     vec3 origin;
     vec3 direction;
-} ray;
+};
 
 vec3 at(const ray* r, const double t) {
     /*
