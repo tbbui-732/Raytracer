@@ -178,18 +178,11 @@ struct ray {
         origin = vec3(_origin);
         direction = vec3(_direction);
     }
-};
 
-/*
- * P(t) = A + t*b;
- * P(t) = Point on a line/ray
- * `A` = Origin -> typically the camera position
- * `b` = Direction
- * `t` = Some real value that dictates how far you move along `b`
- */
-vec3 at(const ray r, const double t) {
-    return r.origin + (r.direction * t);
-}
+    vec3 at(const double t) {
+        return origin + (direction * t);
+    }
+};
 
 vec3 ray_color(const ray r) {
     vec3 unit_direction = r.direction.unit();
@@ -200,47 +193,43 @@ vec3 ray_color(const ray r) {
 }
 /* END OF RAY/RAYS */
 
-int main(void) {
-    // Image
+int main() {
+    constexpr f64 ratio = 16.0 / 9.0;
 
-    auto aspect_ratio = 16.0 / 9.0;
-    int image_width = 400;
+    constexpr u32 window_height = 400;
+    constexpr u32 window_width = window_height * ratio;
 
-    // Calculate the image height, and ensure that it's at least 1.
-    int image_height = int(image_width / aspect_ratio);
-    image_height = (image_height < 1) ? 1 : image_height;
+    constexpr f64 viewport_height = 2.0;
+    constexpr f64 viewport_width = viewport_height * (window_width / window_height);
 
-    // Camera
+    const vec3 horizontal_viewport_direction = vec3(viewport_width, 0., 0.);
+    const vec3 vertical_viewport_direction = vec3(0., -viewport_height, 0.);
 
-    auto focal_length = 1.0;
-    auto viewport_height = 2.0;
-    auto viewport_width = viewport_height * (double(image_width)/image_height);
-    auto camera_center = vec3(0, 0, 0);
+    const vec3 horizontal_pixel_delta = horizontal_viewport_direction / window_width;
+    const vec3 vertical_pixel_delta = vertical_viewport_direction / window_height;
 
-    // Calculate the vectors across the horizontal and down the vertical viewport edges.
-    auto viewport_u = vec3(viewport_width, 0, 0);
-    auto viewport_v = vec3(0, -viewport_height, 0);
+    constexpr f64 focal_distance = 1.0;
+    const vec3 camera_center = vec3(0., 0., 0.);
 
-    // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    auto pixel_delta_u = viewport_u / image_width;
-    auto pixel_delta_v = viewport_v / image_height;
+    vec3 viewport_upper_left = camera_center
+        - vec3(0, 0, focal_distance)
+        - horizontal_viewport_direction/2.0
+        - vertical_viewport_direction/2.0;
 
-    // Calculate the location of the upper left pixel.
-    auto viewport_upper_left = camera_center
-        - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
-    auto pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+    vec3 pixel00_loc = viewport_upper_left + 0.5
+                     * (horizontal_viewport_direction + vertical_viewport_direction);
 
-    // Render
-
-    std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
-    for (int j = 0; j < image_height; j++) {
-        for (int i = 0; i < image_width; i++) {
-            auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-            auto ray_direction = pixel_center - camera_center;
-            ray r(camera_center, ray_direction);
-
+    for (u32 x = 0; x < window_width; ++x) {
+        for (u32 y = 0; y < window_height; ++y) {
+            vec3 pixel_center = pixel00_loc
+                              + (x * horizontal_pixel_delta)
+                              + (y * vertical_pixel_delta);
+            vec3 ray_to_pixel_direction = pixel_center - camera_center;
+            ray r(camera_center, ray_to_pixel_direction);
             vec3 pixel_color = ray_color(r);
             write_color(pixel_color);
         }
     }
+
+    return EXIT_SUCCESS;
 }
