@@ -1,8 +1,17 @@
+#include <iostream>
 #include <cstdlib>
+#include <cstdint>
 #include <cmath>
 
 #define PROJECT_NAME "RTIOW"
 #define EPSILON 1e-9
+
+using i32 = std::int32_t;
+using i64 = std::int64_t;
+using u32 = std::uint32_t;
+using u64 = std::uint64_t;
+using f32 = float;
+using f64 = double;
 
 // FIXME(bao): image.ppm is resulting in a white image
 
@@ -10,10 +19,9 @@
 /* START OF VEC3 */
 /*****************/
 struct vec3 {
-    double x, y, z;
-    
-    // ctor
-    vec3() { x = 0; y = 0; z = 0; }
+    f64 x, y, z;
+
+    vec3() { x = 0.; y = 0.; z = 0.; }
     vec3(double _x, double _y, double _z) : x(_y), y(_y), z(_z) {}
 
     // additional accessors for colors
@@ -21,81 +29,88 @@ struct vec3 {
     double g() { return y; }
     double b() { return z; }
 
-    void print() { fprintf(stdout, "%f %f %f\n", x, y, z); }
-    
-    // arithmetics
+    void print() { std::cout << x << ' ' << y << ' ' << z << '\n' }
+
+    // arithmetic
     vec3 operator+(const vec3* other) {
+        return = vec3(
+            this->x + other->x,
+            this->y + other->y,
+            this->z + other->z
+        );
+    }
+
+    vec3 operator-(const vec3* other) {
+        return vec3(
+            this->x - other->x,
+            this->y - other->y,
+            this->z - other->z
+        );
+    }
+
+    vec3 operator*(const double scalar) {
+        return vec3(
+            this->x * scalar,
+            this->y * scalar,
+            this->z * scalar
+        );
+    }
+
+    vec3 operator/(const double scalar) {
+        return vec3(
+            this->x / scalar,
+            this->y / scalar,
+            this->z / scalar
+        );
+    }
+
+    void operator+=(const vec3* other) {
         x += other->x;
         y += other->y;
         z += other->z;
     }
 
-    vec3 operator-(const vec3* other) {
+    void operator-=(const vec3* other) {
         x -= other->x;
         y -= other->y;
         z -= other->z;
     }
 
-    vec3 operator*(const double scalar) {
+    void operator*=(const double scalar) {
         x *= scalar;
         y *= scalar;
         z *= scalar;
     }
 
-    // TODO(bao): continue writing arithmetic operator overloads
-    vec3 operator/(const double scalar) {
+    void operator/=(const double scalar) {
+        x /= scalar;
+        y /= scalar;
+        z /= scalar;
+    }
+
+    double length_squared() {
+        double x_squared = pow(this->x, 2);
+        double y_squared = pow(this->y, 2);
+        double z_squared = pow(this->z, 2);
+        return x_squared + y_squared + z_squared;
+    }
+
+    double length() {
+        return sqrt(this->length_squared());
+    }
+
+    double magnitude() {
+        return this->length();
+    }
+
+    double norm() {
+        return this->length();
+    }
+
+    vec3 unit() {
+        return this / this->length();
     }
 };
-
-void print(const vec3* Vector) {
-    fprintf(stdout, "%f %f %f\n", Vector->x, Vector->y, Vector->z);
-}
-
-vec3 add(const vec3* self, const vec3* other) {
-    vec3 new = {
-        self->x + other->x,
-        self->y + other->y,
-        self->z + other->z
-    };
-    return new;
-}
-
-vec3 sub(const vec3* self, const vec3* other) {
-    vec3 new = {
-        self->x - other->x,
-        self->y - other->y,
-        self->z - other->z
-    };
-    return new;
-}
-
-vec3 multiply(const vec3* Vector, const double scalar) {
-    vec3 new = {
-        Vector->x * scalar,
-        Vector->y * scalar,
-        Vector->z * scalar
-    };
-    return new;
-}
-
-vec3 divide(const vec3* Vector, const double scalar) {
-    vec3 new = {
-        Vector->x / scalar,
-        Vector->y / scalar,
-        Vector->z / scalar
-    };
-    return new;
-}
-
-double length_squared(const vec3* Vector) {
-    return (Vector->x * Vector->x) +
-           (Vector->y * Vector->y) +
-           (Vector->z * Vector->z);
-}
-
-double length(const vec3* Vector) {
-    return sqrt(length_squared(Vector));
-}
 
 double dot(const vec3* self, const vec3* other) {
     return self->x * other->x +
@@ -104,17 +119,13 @@ double dot(const vec3* self, const vec3* other) {
 }
 
 vec3 cross(const vec3* self, const vec3* other) {
-    vec3 new = {
+    return vec3(
         self->y * other->z - self->z * other->y,
         self->z * other->x - self->x * other->z,
         self->x * other->y - self->y * other->x
-    };
-    return new;
+    );
 }
 
-vec3 unit(const vec3* Vector) {
-    return divide(Vector, length(Vector));
-}
 /* END OF VEC3 */
 
 
@@ -203,14 +214,12 @@ int main(void) {
     pixel00_location = multiply(&pixel00_location, 0.5);
     pixel00_location = add(&viewport_upper_left, &pixel00_location);
 
-    FILE* file = fopen("image.ppm", "w");
-
-    if (file == NULL) {
-        fprintf(stderr, "Error opening file: %s\n", "image.ppm");
+    if (file == nullptr) {
+        std::cerr << "Error opening files: image.ppm\n";
         return EXIT_FAILURE;
     }
 
-    fprintf(stdout, "P3\n%d %d\n255\n", image_width, image_height);
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n"
     for (int j = 0; j < image_height; j++) {
         for (int i = 0; i < image_width; i++) {
             vec3 iu = multiply(&pixel_delta_u, i);
@@ -224,8 +233,6 @@ int main(void) {
             write_color(&pixel_color);
         }
     }
-
-    fclose(file);
 
     return EXIT_SUCCESS;
 }
