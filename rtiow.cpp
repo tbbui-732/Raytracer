@@ -89,6 +89,14 @@ struct vec3 {
         z /= scalar;
     }
 
+    bool operator==(const vec3 other) {
+        return (
+            this->x == other.x &&
+            this->y == other.y &&
+            this->z == other.z
+        );
+    }
+
     f64 length_squared() const {
         f64 x_squared = pow(this->x, 2);
         f64 y_squared = pow(this->y, 2);
