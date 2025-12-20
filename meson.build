@@ -3,8 +3,13 @@ project(
   'cpp',
   meson_version : '>= 1.3.0',
   version : '0.1',
-  default_options : ['c_std=c++20', 'warning_level=3'],
+  default_options : [
+    'cpp_std=c++20',
+    'warning_level=3',
+    'buildtype=debug'],
 )
+
+project_name = 'rtiow'
 
 cc = meson.get_compiler('cpp')
 dependencies = [
@@ -12,8 +17,8 @@ dependencies = [
 ]
 
 exe = executable(
-  'rtiow',
-  'rtiow.cpp',
+  project_name,
+  project_name + '.cpp',
   dependencies : dependencies,
   install : true,
 )
